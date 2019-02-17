@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/leighmacdonald/golm"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -20,7 +20,7 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-func signObject(userId string, deviceId string, act golm.Account, o map[string]interface{}) (map[string]interface{}, error) {
+func SignObject(userId string, deviceId string, act golm.Account, o map[string]interface{}) (map[string]interface{}, error) {
 	b, err := json.Marshal(o)
 	if err != nil {
 		return o, err
@@ -74,10 +74,46 @@ func NewEncryptedClient(homeServerURL, userID, accessToken string, deviceId stri
 		deviceId = RandStringRunes(20)
 		fmt.Print("Created new device ID")
 	}
+	// Create olm device & keys
 	_, err = InitDeviceCrypto(&cli, deviceId)
 	if err != nil {
 		log.Println("Failed to initialize client crypto")
 	}
 
+	act, err := cli.Store.LoadAccount(deviceId)
+	if err != nil {
+		log.WithError(err).Panic("Failed to fetch newly created crypto session")
+	}
+	keys, err := act.GetIdentityKeys()
+	if err != nil {
+		log.WithError(err).Panic("Failed to fetch newly created crypto keys")
+	}
+
+	// Yikes.
+	req := make(map[string]interface{})
+	deviceKeys := make(map[string]interface{})
+	deviceKeys["user_id"] = userID
+	deviceKeys["device_id"] = deviceId
+	deviceKeys["algorithms"] = []string{
+		"m.olm.curve25519-aes-sha256",
+		"m.megolm.v1.aes-sha",
+	}
+	deviceKeys["keys"] = map[string]string{
+		fmt.Sprintf("curve25519:%s", deviceId): keys.Curve25519,
+		fmt.Sprintf("ed25519:%s", deviceId):    keys.Ed25519,
+	}
+	signedDeviceKeys, err := SignObject(userId, deviceId, act, deviceKeys)
+	if err != nil {
+		log.Fatal("Failed to sign device keys")
+	}
+
+	req["device_keys"] = signedDeviceKeys
+	var resp map[string]interface{}
+	r, err := c.MakeRequest("POST", urlPath, req, &resp)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	log.Printf(string(r))
 	return &cli, nil
 }

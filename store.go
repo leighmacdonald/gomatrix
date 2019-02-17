@@ -90,5 +90,7 @@ func NewInMemoryStore() *InMemoryStore {
 		Filters:   make(map[string]string),
 		NextBatch: make(map[string]string),
 		Rooms:     make(map[string]*Room),
+		Accounts:  make(map[string]string),
+		Published: false,
 	}
 }
