@@ -102,17 +102,16 @@ func NewEncryptedClient(homeServerURL, userID, accessToken string, deviceId stri
 		fmt.Sprintf("curve25519:%s", deviceId): keys.Curve25519,
 		fmt.Sprintf("ed25519:%s", deviceId):    keys.Ed25519,
 	}
-	signedDeviceKeys, err := SignObject(userId, deviceId, act, deviceKeys)
+	signedDeviceKeys, err := SignObject(userID, deviceId, act, deviceKeys)
 	if err != nil {
 		log.Fatal("Failed to sign device keys")
 	}
 
 	req["device_keys"] = signedDeviceKeys
 	var resp map[string]interface{}
-	r, err := c.MakeRequest("POST", urlPath, req, &resp)
+	r, err := cli.MakeRequest("POST", cli.BuildURL("keys", "upload"), req, &resp)
 	if err != nil {
-		log.Error(err)
-		return nil
+		log.WithError(err).Fatal("Failed to upload encryption keys")
 	}
 	log.Printf(string(r))
 	return &cli, nil
