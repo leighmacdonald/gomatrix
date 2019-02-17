@@ -1,8 +1,8 @@
 package gomatrix
 
 import (
-	"coupscoop/golm"
 	"errors"
+	"github.com/leighmacdonald/golm"
 )
 
 // Storer is an interface which must be satisfied to store client data.

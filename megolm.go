@@ -1,9 +1,9 @@
 package gomatrix
 
 import (
-	"coupscoop/golm"
 	"encoding/json"
 	"fmt"
+	"github.com/leighmacdonald/golm"
 	"log"
 	"math/rand"
 	"net/http"
