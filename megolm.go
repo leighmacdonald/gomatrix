@@ -1,10 +1,10 @@
 package gomatrix
 
 import (
+	"coupscoop/golm"
 	"encoding/json"
 	"fmt"
-	"github.com/leighmacdonald/golm"
-	log "github.com/sirupsen/logrus"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -76,7 +76,7 @@ func NewEncryptedClient(homeServerURL, userID, accessToken string, deviceId stri
 	}
 	_, err = InitDeviceCrypto(&cli, deviceId)
 	if err != nil {
-		log.withError(err).Error("Failed to initialize client crypto")
+		log.Println("Failed to initialize client crypto")
 	}
 
 	return &cli, nil
