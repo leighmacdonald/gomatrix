@@ -1,5 +1,10 @@
 package gomatrix
 
+import (
+	"errors"
+	"github.com/leighmacdonald/golm"
+)
+
 // Storer is an interface which must be satisfied to store client data.
 //
 // You can either write a struct which persists this data to disk, or you can use the
@@ -12,6 +17,9 @@ type Storer interface {
 	LoadNextBatch(userID string) string
 	SaveRoom(room *Room)
 	LoadRoom(roomID string) *Room
+	SaveAccount(deviceId string, account golm.Account) error
+	DeleteAccount(deviceId string) error
+	LoadAccount(deviceId string) (golm.Account, error)
 }
 
 // InMemoryStore implements the Storer interface.
@@ -23,6 +31,27 @@ type InMemoryStore struct {
 	Filters   map[string]string
 	NextBatch map[string]string
 	Rooms     map[string]*Room
+	Published bool
+	Accounts  map[string]string
+}
+
+func (s *InMemoryStore) LoadAccount(deviceId string) (golm.Account, error) {
+	actStr, ok := s.Accounts[deviceId]
+	if !ok {
+		return golm.Account{}, errors.New("invalid device id")
+	}
+	act := golm.AccountFromPickle(deviceId, actStr)
+	return act, nil
+}
+
+func (s *InMemoryStore) SaveAccount(deviceId string, account golm.Account) error {
+	s.Accounts[deviceId] = account.Pickle(deviceId)
+	return nil
+}
+
+func (s *InMemoryStore) DeleteAccount(deviceId string) error {
+	delete(s.Accounts, deviceId)
+	return nil
 }
 
 // SaveFilterID to memory.
